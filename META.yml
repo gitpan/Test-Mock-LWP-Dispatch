@@ -16,7 +16,7 @@ name: Test-Mock-LWP-Dispatch
 provides:
   Test::Mock::LWP::Dispatch:
     file: lib/Test/Mock/LWP/Dispatch.pm
-    version: v0.0.1
+    version: 0.02
 requires:
   Carp: 0
   Data::Dumper: 0
@@ -26,4 +26,4 @@ requires:
   Test::MockObject: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: v0.0.1
+version: 0.02
