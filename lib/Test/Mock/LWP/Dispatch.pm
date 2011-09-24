@@ -1,49 +1,16 @@
 package Test::Mock::LWP::Dispatch;
+{
+  $Test::Mock::LWP::Dispatch::VERSION = '0.03';
+}
 
 use strict;
 use warnings;
 
-=head1 NAME
+# ABSTRACT: mocks LWP::UserAgent and dispatches your requests/responses
 
-Test::Mock::LWP::Dispatch - mocks LWP::UserAgent and dispatches your requests/responses
-
-=head1 SYNOPSIS
-
-  # in your *.t
-  use Test::Mock::LWP::Dispatch;
-  use HTTP::Response;
-
-  # global mappings for requests and responses for LWP::UserAgent
-  $mock_ua->map('http://example.com', HTTP::Response->new(...));
-  # or
-  $mock_ua->map(qr!^http://example.com/page!, sub { my $request = shift;
-                                                    # ... create $response
-                                                    return $response; });
-
-  # or make local mappings
-  my $ua = LWP::UserAgent->new;
-  $ua->map(...);
-
-=head1 DESCRIPTION
-
-This module intends for testing a code that heavily uses LWP::UserAgent.
-
-Assume that function you want to test makes three different request to the server
-and expects to get some content from the server. To test this function you should
-setup request/response mappings for mocked UserAgent and test it.
-
-For doing something with mappings, here are methods C<map>, C<unmap> and C<unmap_all>. For controlling context of these mappings (is it applies for all created in your
-code LWP::UserAgent's or only to one specific?) you should call these functions
-for exported C<$mock_ua> object (global mapping) or for newly created LWP::UserAgent (local mappings).
-
-See also on L<Test::Mock::LWP>, it provides mocked LWP objects for you, so probably
-you can solve your problems with this module too.
-
-=cut
 
 use base qw(Exporter Test::MockObject);
 
-our $VERSION = 0.02;
 our @EXPORT = qw($mock_ua);
 our @EXPORT_OK = @EXPORT;
 
@@ -59,24 +26,6 @@ BEGIN {
     my $default_resp = HTTP::Response->new(404);
 
 
-=head1 METHODS
-
-=over 4
-
-=item simple_request($req)
-
-This is only method of LWP::UserAgent that mocked. When you make $ua->get(...)
-or $ua->head(...) or just get() from LWP::Simple, at some point calls
-C<simple_request()> method. So for controlling responses to your requests it is
-only method needed to mock.
-
-In this module C<simple_request()> loops through your local and global mappings
-(in this order) and returns response on a first matched mapping. If no matched
-C<simple_request()> returns HTTP::Response with 404 code.
-
-Be accurate: method loops through mappings in order of adding these mappings.
-
-=cut
 
     sub simple_request {
         my $mo = shift;
@@ -114,6 +63,129 @@ Be accurate: method loops through mappings in order of adding these mappings.
             return $default_resp;
         }
     }
+
+
+    sub map {
+        my $mo = shift;
+
+        my ($req, $resp) = @_;
+        if (!defined($req) || !defined($resp)) {
+            croak "You should pass 2 arguments in map()";
+        }
+        if (ref($req) !~ /^(HTTP::Request|Regexp|CODE|)$/) {
+            croak "Type of request must be HTTP::Request, regexp, coderef or plain string\n";
+        }
+        if (ref($resp) !~ /^(HTTP::Response|CODE)$/) {
+            croak "Type of response must be HTTP::Response or coderef\n";
+        }
+
+        my $map = [$req, $resp];
+        push @{$mo->{_maps}}, $map;
+        return scalar(@{$mo->{_maps}}) - 1;
+    }
+
+
+    sub unmap {
+        my $mo = shift;
+        my $index = shift;
+        return if (!defined($index) || $index !~ /^\d+$/);
+        unless ($mo->{_maps}) {
+            warn "You call unmap() before any call of map()\n";
+            return;
+        }
+        if ($index < 0 || $index > (scalar(@{$mo->{_maps}}) - 1)) {
+            warn "Index $index is out of maps range\n";
+            return;
+        }
+        delete $mo->{_maps}->[$index];
+        return 1;
+    }
+
+
+    sub unmap_all {
+        my $mo = shift;
+        $mo->{_maps} = [];
+        return 1;
+    }
+
+    my %mock_methods = (
+         simple_request => \&simple_request,
+         map            => \&map,
+         unmap          => \&unmap,
+         unmap_all      => \&unmap_all,
+    );
+
+    $mock_ua = Test::MockObject->new();
+    $mock_ua->set_isa('LWP::UserAgent');
+
+    $mock_ua->fake_module('LWP::UserAgent', %mock_methods);
+    while (my ($method, $handler) = each %mock_methods) {
+        $mock_ua->mock($method, $handler);
+    }
+}
+
+1;
+
+
+
+=pod
+
+=head1 NAME
+
+Test::Mock::LWP::Dispatch - mocks LWP::UserAgent and dispatches your requests/responses
+
+=head1 VERSION
+
+version 0.03
+
+=head1 SYNOPSIS
+
+  # in your *.t
+  use Test::Mock::LWP::Dispatch;
+  use HTTP::Response;
+
+  # global mappings for requests and responses for LWP::UserAgent
+  $mock_ua->map('http://example.com', HTTP::Response->new(...));
+  # or
+  $mock_ua->map(qr!^http://example.com/page!, sub { my $request = shift;
+                                                    # ... create $response
+                                                    return $response; });
+
+  # or make local mappings
+  my $ua = LWP::UserAgent->new;
+  $ua->map(...);
+
+=head1 DESCRIPTION
+
+This module intends for testing a code that heavily uses LWP::UserAgent.
+
+Assume that function you want to test makes three different request to the server
+and expects to get some content from the server. To test this function you should
+setup request/response mappings for mocked UserAgent and test it.
+
+For doing something with mappings, here are methods C<map>, C<unmap> and C<unmap_all>. For controlling context of these mappings (is it applies for all created in your
+code LWP::UserAgent's or only to one specific?) you should call these functions
+for exported C<$mock_ua> object (global mapping) or for newly created LWP::UserAgent (local mappings).
+
+See also on L<Test::Mock::LWP>, it provides mocked LWP objects for you, so probably
+you can solve your problems with this module too.
+
+=head1 METHODS
+
+=over 4
+
+=item simple_request($req)
+
+This is only method of LWP::UserAgent that mocked. When you make $ua->get(...)
+or $ua->head(...) or just get() from LWP::Simple, at some point calls
+C<simple_request()> method. So for controlling responses to your requests it is
+only method needed to mock.
+
+In this module C<simple_request()> loops through your local and global mappings
+(in this order) and returns response on a first matched mapping. If no matched
+C<simple_request()> returns HTTP::Response with 404 code.
+
+Be accurate: method loops through mappings in order of adding these mappings.
 
 =item map($req_descr, $resp_descr)
 
@@ -167,48 +239,9 @@ HTTP::Response object.
 
 Method returns index of your mapping. You can use it in C<unmap>.
 
-=cut
-
-    sub map {
-        my $mo = shift;
-
-        my ($req, $resp) = @_;
-        if (!defined($req) || !defined($resp)) {
-            croak "You should pass 2 arguments in map()";
-        }
-        if (ref($req) !~ /^(HTTP::Request|Regexp|CODE|)$/) {
-            croak "Type of request must be HTTP::Request, regexp, coderef or plain string\n";
-        }
-        if (ref($resp) !~ /^(HTTP::Response|CODE)$/) {
-            croak "Type of response must be HTTP::Response or coderef\n";
-        }
-
-        my $map = [$req, $resp];
-        push @{$mo->{_maps}}, $map;
-        return scalar(@{$mo->{_maps}}) - 1;
-    }
-
 =item unmap($map_index)
 
 Deletes some mapping by index.
-
-=cut
-
-    sub unmap {
-        my $mo = shift;
-        my $index = shift;
-        return if (!defined($index) || $index !~ /^\d+$/);
-        unless ($mo->{_maps}) {
-            warn "You call unmap() before any call of map()\n";
-            return;
-        }
-        if ($index < 0 || $index > (scalar(@{$mo->{_maps}}) - 1)) {
-            warn "Index $index is out of maps range\n";
-            return;
-        }
-        delete $mo->{_maps}->[$index];
-        return 1;
-    }
 
 =item unmap_all
 
@@ -216,42 +249,14 @@ Deletes all mappings.
 
 =back
 
-=cut
-
-    sub unmap_all {
-        my $mo = shift;
-        $mo->{_maps} = [];
-        return 1;
-    }
-
-    $mock_ua = Test::MockObject->new;
-    bless $mock_ua, __PACKAGE__;
-    $mock_ua->fake_module(
-        'LWP::UserAgent',
-         simple_request => \&simple_request,
-         map            => \&map,
-         unmap          => \&unmap,
-         unmap_all      => \&unmap_all,
-    );
-}
-
-1;
-
-__END__
-
 =head1 MISCELLANEOUS
 
 This mock object doesn't call C<fake_new()>. So when you prepare response using
 coderef, you can be sure, that "User-Agent" header will be untouched and so on.
 
-=head1 AUTHORS
+=head1 ACKNOWLEDGEMENTS
 
-Yury Zavarin C<yury.zavarin@gmail.com>.
-
-=head1 LICENSE
-
-This library is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+Mike Doherty
 
 =head1 SEE ALSO
 
@@ -259,5 +264,20 @@ L<http://github.com/tadam/Test-Mock-LWP-Dispatch>
 L<Test::Mock::LWP>
 L<LWP::UserAgent>
 
+=head1 AUTHOR
+
+Yury Zavarin <yury.zavarin@gmail.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2011 by Yury Zavarin.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+
 

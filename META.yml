@@ -3,27 +3,30 @@ abstract: 'mocks LWP::UserAgent and dispatches your requests/responses'
 author:
   - 'Yury Zavarin <yury.zavarin@gmail.com>'
 build_requires:
+  Moose: 0
   Test::Exception: 0
   Test::More: 0
 configure_requires:
-  Module::Build: 0.36
-generated_by: 'Module::Build version 0.3603'
+  ExtUtils::MakeMaker: 6.30
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.300002, CPAN::Meta::Converter version 2.110930'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: Test-Mock-LWP-Dispatch
-provides:
-  Test::Mock::LWP::Dispatch:
-    file: lib/Test/Mock/LWP/Dispatch.pm
-    version: 0.02
 requires:
   Carp: 0
   Data::Dumper: 0
   Exporter: 0
+  HTTP::Request: 0
+  HTTP::Response: 0
   LWP::UserAgent: 0
-  Module::Build: 0.2805
   Test::MockObject: 0
+  base: 0
+  strict: 0
+  warnings: 0
 resources:
-  license: http://dev.perl.org/licenses/
-version: 0.02
+  homepage: http://github.com/tadam/Test-Mock-LWP-Dispatch
+  repository: git://github.com/tadam/Test-Mock-LWP-Dispatch.git
+version: 0.03

@@ -1,7 +1,17 @@
-Build.PL
 Changes
-lib/Test/Mock/LWP/Dispatch.pm
-MANIFEST			This list of files
-README
-t/00main.t
+LICENSE
+MANIFEST
 META.yml
+Makefile.PL
+README
+dist.ini
+lib/Test/Mock/LWP/Dispatch.pm
+t/global.t
+t/incorrect_usage.t
+t/load.t
+t/mapping.t
+t/methods.t
+t/moose.t
+t/release-pod-coverage.t
+t/release-pod-syntax.t
+t/unmap.t
