@@ -1,6 +1,6 @@
 package Test::Mock::LWP::Dispatch;
 {
-  $Test::Mock::LWP::Dispatch::VERSION = '0.03';
+  $Test::Mock::LWP::Dispatch::VERSION = '0.04';
 }
 
 use strict;
@@ -15,7 +15,7 @@ our @EXPORT = qw($mock_ua);
 our @EXPORT_OK = @EXPORT;
 
 use Carp qw(croak);
-use Data::Dumper;
+use Data::Dumper qw();
 use HTTP::Request;
 use HTTP::Response;
 use LWP::UserAgent;
@@ -39,7 +39,11 @@ BEGIN {
             my ($req, $resp) = @{$map};
 
             if (ref($req) eq 'HTTP::Request') {
-                next unless (Dumper($in_req) eq Dumper($req));
+                my $dd = Data::Dumper->new([$in_req]);
+                my $dd_in = Data::Dumper->new([$req]);
+                $dd->Sortkeys(1);
+                $dd_in->Sortkeys(1);
+                next unless ($dd_in->Dump eq $dd->Dump);
             } elsif (ref($req) eq '') {
                next unless ($in_req->uri eq $req);
             } elsif (ref($req) eq 'Regexp') {
@@ -126,7 +130,7 @@ BEGIN {
 
 1;
 
-
+__END__
 
 =pod
 
@@ -136,7 +140,7 @@ Test::Mock::LWP::Dispatch - mocks LWP::UserAgent and dispatches your requests/re
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
@@ -270,14 +274,9 @@ Yury Zavarin <yury.zavarin@gmail.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Yury Zavarin.
+This software is copyright (c) 2013 by Yury Zavarin.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
-
-
