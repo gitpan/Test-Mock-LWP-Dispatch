@@ -1,6 +1,6 @@
 package Test::Mock::LWP::Dispatch;
 {
-  $Test::Mock::LWP::Dispatch::VERSION = '0.04';
+  $Test::Mock::LWP::Dispatch::VERSION = '0.05';
 }
 
 use strict;
@@ -140,7 +140,7 @@ Test::Mock::LWP::Dispatch - mocks LWP::UserAgent and dispatches your requests/re
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 
