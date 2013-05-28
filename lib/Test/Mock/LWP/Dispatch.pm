@@ -1,6 +1,6 @@
 package Test::Mock::LWP::Dispatch;
 {
-  $Test::Mock::LWP::Dispatch::VERSION = '0.05';
+  $Test::Mock::LWP::Dispatch::VERSION = '0.06';
 }
 
 use strict;
@@ -13,6 +13,7 @@ use base qw(Exporter Test::MockObject);
 
 our @EXPORT = qw($mock_ua);
 our @EXPORT_OK = @EXPORT;
+our $DEFAULT_REQUEST_HEADERS = 1;
 
 use Carp qw(croak);
 use Data::Dumper qw();
@@ -30,6 +31,8 @@ BEGIN {
     sub simple_request {
         my $mo = shift;
         my $in_req = shift;
+        $in_req = $mo->prepare_request($in_req)
+          if ( $DEFAULT_REQUEST_HEADERS && $mo->can('prepare_request') );
 
         my $global_maps = $mock_ua->{_maps} || [];
         my $local_maps = $mo->{_maps} || [];
@@ -39,6 +42,8 @@ BEGIN {
             my ($req, $resp) = @{$map};
 
             if (ref($req) eq 'HTTP::Request') {
+                $req = $mo->prepare_request($req)
+                  if ( $DEFAULT_REQUEST_HEADERS && $mo->can('prepare_request') );
                 my $dd = Data::Dumper->new([$in_req]);
                 my $dd_in = Data::Dumper->new([$req]);
                 $dd->Sortkeys(1);
@@ -119,13 +124,10 @@ BEGIN {
          unmap_all      => \&unmap_all,
     );
 
-    $mock_ua = Test::MockObject->new();
-    $mock_ua->set_isa('LWP::UserAgent');
-
-    $mock_ua->fake_module('LWP::UserAgent', %mock_methods);
-    while (my ($method, $handler) = each %mock_methods) {
-        $mock_ua->mock($method, $handler);
-    }
+    Test::MockObject->fake_module('LWP::UserAgent', %mock_methods);
+    # The global mock object, can be used directly, or can just create a new
+    # LWP::UserAgent object - that is mocked too.
+    $mock_ua = LWP::UserAgent->new;
 }
 
 1;
@@ -140,7 +142,7 @@ Test::Mock::LWP::Dispatch - mocks LWP::UserAgent and dispatches your requests/re
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 
@@ -253,6 +255,23 @@ Deletes all mappings.
 
 =back
 
+=head1 SWITCHES
+
+=head2 DEFAULT_REQUEST_HEADERS
+
+LWP::UserAgent sets default headers for requests by calling
+LWP::UserAgent->prepare_request().
+
+Previous versions (<= 0.05) of Test:Mock::LWP::Dispatch didn't intercept this call
+in overridden C<simple_request()>.
+
+Now Test::Mock::LWP::Dispatch does it by default.
+
+If for some reason you want to get back previous behaviour of the module,
+set the following variable off:
+
+$Test::Mock::LWP::Dispatch::DEFAULT_REQUEST_HEADERS = 0;
+
 =head1 MISCELLANEOUS
 
 This mock object doesn't call C<fake_new()>. So when you prepare response using
@@ -262,10 +281,18 @@ coderef, you can be sure, that "User-Agent" header will be untouched and so on.
 
 Mike Doherty
 
+Andreas König
+
+Ash Berlin
+
+Joe Papperello
+
 =head1 SEE ALSO
 
 L<http://github.com/tadam/Test-Mock-LWP-Dispatch>
+
 L<Test::Mock::LWP>
+
 L<LWP::UserAgent>
 
 =head1 AUTHOR

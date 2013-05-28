@@ -6,6 +6,7 @@ Makefile.PL
 README
 dist.ini
 lib/Test/Mock/LWP/Dispatch.pm
+t/default_headers.t
 t/global.t
 t/incorrect_usage.t
 t/load.t
@@ -14,4 +15,5 @@ t/methods.t
 t/moose.t
 t/release-pod-coverage.t
 t/release-pod-syntax.t
+t/ua_requests.t
 t/unmap.t

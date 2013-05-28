@@ -28,4 +28,4 @@ requires:
 resources:
   homepage: http://github.com/tadam/Test-Mock-LWP-Dispatch
   repository: git://github.com/tadam/Test-Mock-LWP-Dispatch.git
-version: 0.05
+version: 0.06

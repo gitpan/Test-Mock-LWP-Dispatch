@@ -1,7 +1,7 @@
 
 
 This archive contains the distribution Test-Mock-LWP-Dispatch,
-version 0.05:
+version 0.06:
 
   mocks LWP::UserAgent and dispatches your requests/responses
 
